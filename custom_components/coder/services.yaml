@@ -1,0 +1,87 @@
+create_chat:
+  name: Create chat
+  description: >-
+    Create a new Coder chat (AI agent run) with an initial prompt.
+    Returns the new chat's ID, title, status and workspace_id, and also
+    fires a coder_chat_created event for trigger-based automations.
+  fields:
+    prompt:
+      name: Prompt
+      description: Initial user message that starts the chat.
+      required: true
+      selector:
+        text:
+          multiline: true
+    workspace_id:
+      name: Workspace ID
+      description: Attach the chat to an existing workspace (optional).
+      selector:
+        text:
+    system_prompt:
+      name: System prompt
+      description: Optional system prompt prepended to the agent.
+      selector:
+        text:
+          multiline: true
+
+send_chat_message:
+  name: Send chat message
+  description: Post a user message to an existing Coder chat.
+  fields:
+    chat_id:
+      name: Chat ID
+      description: UUID of the chat to send to.
+      required: true
+      selector:
+        text:
+    message:
+      name: Message
+      description: The text to send as the user message.
+      required: true
+      selector:
+        text:
+          multiline: true
+
+interrupt_chat:
+  name: Interrupt chat
+  description: Interrupt a running Coder chat.
+  fields:
+    chat_id:
+      name: Chat ID
+      description: UUID of the chat to interrupt.
+      required: true
+      selector:
+        text:
+
+archive_chat:
+  name: Archive chat
+  description: Archive a Coder chat (Coder's API does not support hard delete).
+  fields:
+    chat_id:
+      name: Chat ID
+      description: UUID of the chat to archive.
+      required: true
+      selector:
+        text:
+
+unarchive_chat:
+  name: Unarchive chat
+  description: Restore a previously archived chat.
+  fields:
+    chat_id:
+      name: Chat ID
+      description: UUID of the chat to unarchive.
+      required: true
+      selector:
+        text:
+
+get_chat:
+  name: Get chat
+  description: Fetch the current status and metadata for a chat. Returns chat data.
+  fields:
+    chat_id:
+      name: Chat ID
+      description: UUID of the chat to fetch.
+      required: true
+      selector:
+        text:

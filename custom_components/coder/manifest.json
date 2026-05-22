@@ -1,0 +1,13 @@
+{
+  "domain": "coder",
+  "name": "Coder",
+  "codeowners": ["@matifali"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/matifali/coder-agents-ha",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/matifali/coder-agents-ha/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

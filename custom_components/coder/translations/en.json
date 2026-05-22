@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Coder",
+        "description": "Enter your Coder deployment URL and a session token (Account → Tokens).",
+        "data": {
+          "url": "Coder URL",
+          "token": "Session token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Coder.",
+      "invalid_auth": "Invalid session token.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Coder deployment is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_chats": { "name": "Total chats" },
+      "running_chats": { "name": "Running chats" },
+      "requires_action_chats": { "name": "Chats requiring action" },
+      "last_chat": {
+        "name": "Last chat",
+        "state": {
+          "waiting": "Waiting",
+          "pending": "Pending",
+          "running": "Running",
+          "paused": "Paused",
+          "completed": "Completed",
+          "error": "Error",
+          "requires_action": "Requires action"
+        }
+      }
+    }
+  },
+  "services": {
+    "create_chat": {
+      "name": "Create chat",
+      "description": "Create a new Coder chat with an initial prompt.",
+      "fields": {
+        "prompt": { "name": "Prompt", "description": "Initial user message." },
+        "workspace_id": { "name": "Workspace ID", "description": "Attach to a workspace." },
+        "system_prompt": { "name": "System prompt", "description": "Optional system prompt." }
+      }
+    },
+    "send_chat_message": {
+      "name": "Send chat message",
+      "description": "Post a message to an existing chat.",
+      "fields": {
+        "chat_id": { "name": "Chat ID", "description": "UUID of the chat." },
+        "message": { "name": "Message", "description": "Message text." }
+      }
+    },
+    "interrupt_chat": {
+      "name": "Interrupt chat",
+      "description": "Interrupt a running chat.",
+      "fields": {
+        "chat_id": { "name": "Chat ID", "description": "UUID of the chat." }
+      }
+    },
+    "archive_chat": {
+      "name": "Archive chat",
+      "description": "Archive a chat.",
+      "fields": {
+        "chat_id": { "name": "Chat ID", "description": "UUID of the chat." }
+      }
+    },
+    "unarchive_chat": {
+      "name": "Unarchive chat",
+      "description": "Unarchive a chat.",
+      "fields": {
+        "chat_id": { "name": "Chat ID", "description": "UUID of the chat." }
+      }
+    },
+    "get_chat": {
+      "name": "Get chat",
+      "description": "Fetch a chat's current status and metadata.",
+      "fields": {
+        "chat_id": { "name": "Chat ID", "description": "UUID of the chat." }
+      }
+    }
+  }
+}
