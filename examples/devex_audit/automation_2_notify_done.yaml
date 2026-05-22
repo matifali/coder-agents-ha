@@ -1,0 +1,32 @@
+# Automation 2 of 2: notify when the audit chat completes.
+# See automation_1_start.yaml for the start side.
+
+alias: "Coder — DevEx audit (notify when done)"
+description: >
+  When the audit chat reaches status=completed, push the link.
+mode: single
+triggers:
+  - trigger: event
+    event_type: coder_chat_status_changed
+    event_data:
+      to: completed
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.event.data.chat_id == states('input_text.coder_devex_chat_id') }}
+actions:
+  - action: persistent_notification.create
+    data:
+      title: "Coder DevEx audit complete"
+      message: >
+        Top 5 Dev Ex items ready.
+        Open: {{ trigger.event.data.chat_url }}
+      notification_id: coder_devex_audit_done
+  - action: notify.YOUR_MOBILE_NOTIFY_TARGET
+    data:
+      title: "Coder DevEx audit complete"
+      message: >
+        Top 5 Dev Ex items ready.
+        {{ trigger.event.data.chat_url }}
+      data:
+        url: "{{ trigger.event.data.chat_url }}"

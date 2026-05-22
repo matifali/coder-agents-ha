@@ -1,0 +1,57 @@
+# Automation 1 of 2: kick off the Coder DevEx audit chat.
+#
+# Paste this whole file into Settings → Automations & Scenes →
+# Create automation → ⋮ → Edit in YAML. Save, then create a second
+# automation from automation_2_notify_done.yaml.
+#
+# Replace YOUR_MOBILE_NOTIFY_TARGET with your phone's notify service
+# (e.g. notify.mobile_app_my_phone). The Coder chat URL is provided
+# automatically via {{ chat.chat_url }}.
+
+alias: "Coder — DevEx audit (start)"
+description: >
+  Kick off a Coder chat to audit Linear Dev Ex issues.
+  Fires at 09:00 Mon–Fri and on manual button press.
+mode: single
+triggers:
+  - trigger: time
+    at: "09:00:00"
+    id: scheduled
+  - trigger: state
+    entity_id: input_button.coder_devex_audit
+    id: manual
+conditions:
+  - condition: template
+    value_template: "{{ trigger.id == 'manual' or now().weekday() < 5 }}"
+actions:
+  - action: coder.create_chat
+    data:
+      prompt: >-
+        Search Linear for issues related to Developer Experience ("Dev Ex").
+        Return the top 5 that either need my input or need immediate
+        attention.
+
+        For each item give: issue ID, title, priority, one-line reason it
+        needs attention, and a link. Plain text, numbered list, terse —
+        this will be read on a phone screen.
+    response_variable: chat
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.coder_devex_chat_id
+    data:
+      value: "{{ chat.chat_id }}"
+  - action: persistent_notification.create
+    data:
+      title: "Coder DevEx audit started"
+      message: >
+        Chat: {{ chat.title or chat.chat_id }}
+        Open: {{ chat.chat_url }}
+      notification_id: coder_devex_audit_started
+  - action: notify.YOUR_MOBILE_NOTIFY_TARGET
+    data:
+      title: "Coder DevEx audit started"
+      message: >
+        Reviewing Linear for Dev Ex issues…
+        {{ chat.chat_url }}
+      data:
+        url: "{{ chat.chat_url }}"
