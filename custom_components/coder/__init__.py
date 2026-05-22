@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CoderConfigEntry) -> boo
         token=entry.data[CONF_TOKEN],
     )
 
-    coordinator = CoderCoordinator(hass, client)
+    coordinator = CoderCoordinator(hass, client, base_url=entry.data[CONF_URL])
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

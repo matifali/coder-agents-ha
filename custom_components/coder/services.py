@@ -89,10 +89,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
             workspace_id=call.data.get(ATTR_WORKSPACE_ID),
             system_prompt=call.data.get(ATTR_SYSTEM_PROMPT),
         )
+        chat_id = chat.get("id")
+        chat_url = coordinator.chat_url(chat_id)
         hass.bus.async_fire(
             EVENT_CHAT_CREATED,
             {
-                "chat_id": chat.get("id"),
+                "chat_id": chat_id,
+                "chat_url": chat_url,
                 "title": chat.get("title"),
                 "workspace_id": chat.get("workspace_id"),
                 "status": chat.get("status"),
@@ -100,7 +103,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         )
         await coordinator.async_request_refresh()
         return {
-            "chat_id": chat.get("id"),
+            "chat_id": chat_id,
+            "chat_url": chat_url,
             "title": chat.get("title"),
             "workspace_id": chat.get("workspace_id"),
             "status": chat.get("status"),
@@ -134,8 +138,10 @@ def async_setup_services(hass: HomeAssistant) -> None:
         chat_id = call.data[ATTR_CHAT_ID]
         coordinator = _coordinator_for_chat(hass, chat_id)
         chat = await coordinator.client.get_chat(chat_id)
+        fetched_id = chat.get("id")
         return {
-            "chat_id": chat.get("id"),
+            "chat_id": fetched_id,
+            "chat_url": coordinator.chat_url(fetched_id),
             "title": chat.get("title"),
             "status": chat.get("status"),
             "workspace_id": chat.get("workspace_id"),

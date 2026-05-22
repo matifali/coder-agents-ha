@@ -32,7 +32,9 @@ class CoderCoordinator(DataUpdateCoordinator[CoderData]):
 
     default_organization_id: str | None = None
 
-    def __init__(self, hass: HomeAssistant, client: CoderClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: CoderClient, base_url: str
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -40,7 +42,13 @@ class CoderCoordinator(DataUpdateCoordinator[CoderData]):
             update_interval=DEFAULT_SCAN_INTERVAL,
         )
         self.client = client
+        self.base_url = base_url.rstrip("/")
         self._previous_statuses: dict[str, str] = {}
+
+    def chat_url(self, chat_id: str | None) -> str | None:
+        if not chat_id:
+            return None
+        return f"{self.base_url}/agents/{chat_id}"
 
     async def _async_setup(self) -> None:
         """Cache the user's primary organization for create_chat."""
@@ -75,6 +83,7 @@ class CoderCoordinator(DataUpdateCoordinator[CoderData]):
                     EVENT_CHAT_STATUS_CHANGED,
                     {
                         "chat_id": chat_id,
+                        "chat_url": self.chat_url(chat_id),
                         "title": chat.get("title"),
                         "workspace_id": chat.get("workspace_id"),
                         "from": previous,

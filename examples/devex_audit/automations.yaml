@@ -1,15 +1,11 @@
 # Two automations for the Coder DevEx audit.
 # Paste these into Settings → Automations & Scenes → Create automation → ⋮ → Edit in YAML.
 #
-# IMPORTANT: replace YOUR_CODER_URL with your own Coder deployment URL
-# (e.g. https://coder.example.com — no trailing slash). The chat URL
-# pattern is `<your_coder_url>/chats/<chat_id>`.
-#
-# Tip: if you don't want to repeat the URL, store it once in
-# secrets.yaml (`coder_url: https://coder.example.com`) and reference
-# it from configuration.yaml as an `input_text` helper with
-# `initial: !secret coder_url`, then use
-# `{{ states('input_text.coder_url') }}/chats/{{ chat.chat_id }}` here.
+# Replace YOUR_MOBILE_NOTIFY_TARGET with your phone's notify service
+# (e.g. notify.mobile_app_my_phone). The Coder chat URL is provided
+# automatically by the integration as `chat.chat_url` (from the service
+# response) and `trigger.event.data.chat_url` (from the events) — no
+# substitution needed for the URL itself.
 
 - alias: "Coder — DevEx audit (start)"
   description: >
@@ -48,16 +44,16 @@
         title: "Coder DevEx audit started"
         message: >
           Chat: {{ chat.title or chat.chat_id }}
-          Open: YOUR_CODER_URL/chats/{{ chat.chat_id }}
+          Open: {{ chat.chat_url }}
         notification_id: coder_devex_audit_started
     - action: notify.YOUR_MOBILE_NOTIFY_TARGET
       data:
         title: "Coder DevEx audit started"
         message: >
           Reviewing Linear for Dev Ex issues…
-          YOUR_CODER_URL/chats/{{ chat.chat_id }}
+          {{ chat.chat_url }}
         data:
-          url: "YOUR_CODER_URL/chats/{{ chat.chat_id }}"
+          url: "{{ chat.chat_url }}"
 
 - alias: "Coder — DevEx audit (notify when done)"
   description: >
@@ -78,13 +74,13 @@
         title: "Coder DevEx audit complete"
         message: >
           Top 5 Dev Ex items ready.
-          Open: YOUR_CODER_URL/chats/{{ trigger.event.data.chat_id }}
+          Open: {{ trigger.event.data.chat_url }}
         notification_id: coder_devex_audit_done
     - action: notify.YOUR_MOBILE_NOTIFY_TARGET
       data:
         title: "Coder DevEx audit complete"
         message: >
           Top 5 Dev Ex items ready.
-          YOUR_CODER_URL/chats/{{ trigger.event.data.chat_id }}
+          {{ trigger.event.data.chat_url }}
         data:
-          url: "YOUR_CODER_URL/chats/{{ trigger.event.data.chat_id }}"
+          url: "{{ trigger.event.data.chat_url }}"
