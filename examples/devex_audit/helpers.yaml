@@ -1,0 +1,14 @@
+# Helpers for the Coder DevEx audit automation.
+# Create these in Settings → Devices & Services → Helpers, OR add this
+# block under `input_button:` / `input_text:` in configuration.yaml.
+
+input_button:
+  coder_devex_audit:
+    name: "Coder DevEx audit"
+    icon: mdi:robot-confused
+
+input_text:
+  coder_devex_chat_id:
+    name: "Coder DevEx chat ID"
+    max: 64
+    initial: ""
