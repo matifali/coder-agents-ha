@@ -11,7 +11,7 @@ sensors so dashboards can show how many chats are running.
 
 ## Status
 
-v0.1 — early. Distributable as a custom HACS repo. Workspaces are intentionally
+v0.2 — early. Distributable as a custom HACS repo. Workspaces are intentionally
 out of scope for this version; each chat carries its `workspace_id` as a sensor
 attribute so you can join them yourself if needed.
 
@@ -29,20 +29,23 @@ A single device per Coder deployment, with four sensors:
 
 | Service | Returns | Description |
 |---|---|---|
-| `coder.create_chat` | ✅ `chat_id`, `title`, `status`, `workspace_id` | Create a new chat with `prompt` (and optional `workspace_id` / `system_prompt`). Also fires `coder_chat_created`. |
+| `coder.create_chat` | ✅ `chat_id`, `chat_url`, `title`, `status`, `workspace_id` | Create a new chat with `prompt` (and optional `workspace_id` / `system_prompt`). Also fires `coder_chat_created`. |
 | `coder.send_chat_message` | — | Post a `message` to an existing `chat_id`. |
 | `coder.interrupt_chat` | — | Interrupt a running chat. |
 | `coder.archive_chat` | — | Archive a chat. |
 | `coder.unarchive_chat` | — | Restore an archived chat. |
-| `coder.get_chat` | ✅ Full chat snapshot | Fetch current status/metadata for a chat. |
+| `coder.get_chat` | ✅ `chat_id`, `chat_url`, `title`, `status`, `workspace_id`, `archived`, `has_unread`, `updated_at` | Fetch current status/metadata for a chat. |
+
+`chat_url` points at the chat in the Coder UI (`<base_url>/agents/<chat_id>`) so
+automations can deep-link straight to it.
 
 **Coder's REST API does not expose hard chat deletion** — archive is the
 closest equivalent.
 
 ## Events
 
-- `coder_chat_created` — fired when `coder.create_chat` succeeds. Payload: `chat_id`, `title`, `workspace_id`, `status`.
-- `coder_chat_status_changed` — fired on each poll when a chat's status changes. Payload: `chat_id`, `title`, `workspace_id`, `from`, `to`.
+- `coder_chat_created` — fired when `coder.create_chat` succeeds. Payload: `chat_id`, `chat_url`, `title`, `workspace_id`, `status`.
+- `coder_chat_status_changed` — fired on each poll when a chat's status changes. Payload: `chat_id`, `chat_url`, `title`, `workspace_id`, `from`, `to`.
 
 ## Example automation
 
@@ -61,7 +64,7 @@ automation:
         response_variable: chat
       - action: notify.mobile_app
         data:
-          message: "Started Coder chat {{ chat.chat_id }}"
+          message: "Started Coder chat {{ chat.title }} — {{ chat.chat_url }}"
 
   - alias: Notify when Coder chat needs me
     triggers:
@@ -72,8 +75,13 @@ automation:
     actions:
       - action: notify.mobile_app
         data:
-          message: "Chat {{ trigger.event.data.title }} needs your input."
+          message: >-
+            Chat {{ trigger.event.data.title }} needs your input.
+            {{ trigger.event.data.chat_url }}
 ```
+
+A more complete worked example (a weekday DevEx audit with helpers and a
+"notify when done" automation) lives under [`examples/devex_audit/`](examples/devex_audit).
 
 ## Install (HACS, custom repository)
 
