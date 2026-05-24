@@ -14,6 +14,7 @@ AUTH_TOKEN = "token"
 AUTH_OAUTH2 = "oauth2"
 
 CONF_CLIENT_ID = "client_id"
+CONF_CLIENT_SECRET = "client_secret"
 CONF_AUTHORIZE_URL = "authorize_url"
 CONF_TOKEN_URL = "token_url"
 

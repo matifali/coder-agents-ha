@@ -14,6 +14,7 @@ from .const import (
     CONF_AUTH_METHOD,
     CONF_AUTHORIZE_URL,
     CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
     CONF_TOKEN,
     CONF_TOKEN_URL,
     CONF_URL,
@@ -38,6 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CoderConfigEntry) -> boo
             entry.data[CONF_CLIENT_ID],
             authorize_url=entry.data[CONF_AUTHORIZE_URL],
             token_url=entry.data[CONF_TOKEN_URL],
+            client_secret=entry.data[CONF_CLIENT_SECRET],
         )
         config_entry_oauth2_flow.async_register_implementation(hass, DOMAIN, impl)
 

@@ -47,17 +47,18 @@ async def register_client(
     registration_endpoint: str,
     redirect_uri: str,
     client_name: str,
-) -> str:
-    """Dynamically register a public PKCE client; returns the new client_id.
+) -> tuple[str, str]:
+    """Dynamically register a confidential client; returns (client_id, client_secret).
 
-    Coder issues a client_secret even when we request
-    `token_endpoint_auth_method: "none"`, but the negotiated auth method
-    is still "none" so we never send the secret on subsequent requests.
+    Coder's /oauth2/tokens endpoint rejects PKCE-only flows by demanding a
+    client_secret regardless of the DCR-negotiated auth method, so we
+    register with `client_secret_post` and send the secret on every token
+    request. PKCE is layered on top by HA's framework for defense in depth.
     """
     body = {
         "redirect_uris": [redirect_uri],
         "client_name": client_name,
-        "token_endpoint_auth_method": "none",
+        "token_endpoint_auth_method": "client_secret_post",
         "grant_types": ["authorization_code", "refresh_token"],
         "response_types": ["code"],
     }
@@ -71,6 +72,7 @@ async def register_client(
     except aiohttp.ClientError as err:
         raise OAuthError(f"DCR failed: {err}") from err
     client_id = data.get("client_id")
-    if not client_id:
-        raise OAuthError("DCR response missing client_id")
-    return client_id
+    client_secret = data.get("client_secret")
+    if not client_id or not client_secret:
+        raise OAuthError("DCR response missing client_id or client_secret")
+    return client_id, client_secret

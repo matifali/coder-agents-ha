@@ -17,6 +17,7 @@ from .const import (
     CONF_AUTH_METHOD,
     CONF_AUTHORIZE_URL,
     CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
     CONF_TOKEN,
     CONF_TOKEN_URL,
     CONF_URL,
@@ -48,6 +49,7 @@ class CoderConfigFlow(
         super().__init__()
         self._url: str | None = None
         self._client_id: str | None = None
+        self._client_secret: str | None = None
         self._metadata: dict[str, Any] | None = None
 
     @property
@@ -59,11 +61,13 @@ class CoderConfigFlow(
         """Persisted alongside the OAuth2 token at entry creation."""
         assert self._url is not None
         assert self._client_id is not None
+        assert self._client_secret is not None
         assert self._metadata is not None
         return {
             CONF_URL: self._url,
             CONF_AUTH_METHOD: AUTH_OAUTH2,
             CONF_CLIENT_ID: self._client_id,
+            CONF_CLIENT_SECRET: self._client_secret,
             CONF_AUTHORIZE_URL: self._metadata["authorization_endpoint"],
             CONF_TOKEN_URL: self._metadata["token_endpoint"],
         }
@@ -94,7 +98,7 @@ class CoderConfigFlow(
             return await self.async_step_token()
 
         try:
-            client_id = await register_client(
+            client_id, client_secret = await register_client(
                 session,
                 metadata["registration_endpoint"],
                 redirect_uri,
@@ -110,6 +114,7 @@ class CoderConfigFlow(
 
         self._metadata = metadata
         self._client_id = client_id
+        self._client_secret = client_secret
 
         impl = config_entry_oauth2_flow.LocalOAuth2ImplementationWithPkce(
             self.hass,
@@ -117,6 +122,7 @@ class CoderConfigFlow(
             client_id,
             authorize_url=metadata["authorization_endpoint"],
             token_url=metadata["token_endpoint"],
+            client_secret=client_secret,
         )
         config_entry_oauth2_flow.async_register_implementation(
             self.hass, DOMAIN, impl
