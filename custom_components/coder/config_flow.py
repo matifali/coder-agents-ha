@@ -9,7 +9,6 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .api import CoderApiError, CoderAuthError, CoderClient
 from .const import (
@@ -102,8 +101,12 @@ class CoderConfigFlow(
                 client_name="Home Assistant — Coder Agents",
             )
         except OAuthError as err:
-            _LOGGER.warning("DCR failed for %s: %s", url, err)
-            return self.async_abort(reason="dcr_failed")
+            _LOGGER.warning(
+                "Coder rejected DCR for redirect_uri=%s (%s) — falling back to token auth",
+                redirect_uri,
+                err,
+            )
+            return await self.async_step_token()
 
         self._metadata = metadata
         self._client_id = client_id
@@ -178,37 +181,16 @@ class CoderConfigFlow(
         )
 
     def _oauth_redirect_uri(self) -> str | None:
-        """Return a callback URL Coder will accept, or None.
+        """Return the exact callback URL HA's framework will send to Coder.
 
-        Coder DCR accepts either an HTTPS redirect_uri (any host) or a
-        loopback HTTP one (127.0.0.1, ::1, localhost). We try HTTPS
-        first; if HA has no HTTPS URL we fall back to plain HTTP only
-        when the resolved host is loopback.
+        Delegates to config_entry_oauth2_flow.async_get_redirect_uri so DCR
+        registers the same value the authorize URL will carry. When the My
+        Home Assistant component is loaded (default in modern HA) this
+        returns the my.home-assistant.io OAuth redirect proxy; otherwise it
+        derives the URL from the X-HA-Frontend-Base header on the current
+        request.
         """
         try:
-            base = get_url(
-                self.hass,
-                allow_internal=False,
-                require_current_request=True,
-                require_ssl=True,
-                require_standard_port=True,
-            )
-            return f"{base}/auth/external/callback"
-        except NoURLAvailableError:
-            pass
-
-        try:
-            base = get_url(
-                self.hass,
-                require_current_request=True,
-                require_ssl=False,
-            )
-        except NoURLAvailableError:
+            return config_entry_oauth2_flow.async_get_redirect_uri(self.hass)
+        except RuntimeError:
             return None
-
-        from urllib.parse import urlparse
-
-        host = urlparse(base).hostname
-        if host in ("localhost", "127.0.0.1", "::1"):
-            return f"{base}/auth/external/callback"
-        return None
