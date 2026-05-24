@@ -8,6 +8,16 @@ DOMAIN = "coder"
 
 CONF_URL = "url"
 CONF_TOKEN = "token"
+CONF_AUTH_METHOD = "auth_method"
+
+AUTH_TOKEN = "token"
+AUTH_OAUTH2 = "oauth2"
+
+CONF_CLIENT_ID = "client_id"
+CONF_AUTHORIZE_URL = "authorize_url"
+CONF_TOKEN_URL = "token_url"
+
+WELL_KNOWN_PATH = "/.well-known/oauth-authorization-server"
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 

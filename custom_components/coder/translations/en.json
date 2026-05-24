@@ -3,11 +3,20 @@
     "step": {
       "user": {
         "title": "Connect to Coder",
-        "description": "Enter your Coder deployment URL and a session token (Account → Tokens).",
+        "description": "Enter your Coder deployment URL. If the server supports OAuth2 and Home Assistant is reachable over HTTPS, you'll be redirected to sign in; otherwise you'll be asked for a session token.",
         "data": {
-          "url": "Coder URL",
+          "url": "Coder URL"
+        }
+      },
+      "token": {
+        "title": "Coder session token",
+        "description": "Paste a session token from Account → Tokens.",
+        "data": {
           "token": "Session token"
         }
+      },
+      "pick_implementation": {
+        "title": "Sign in with Coder"
       }
     },
     "error": {
@@ -16,7 +25,20 @@
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This Coder deployment is already configured."
+      "already_configured": "This Coder deployment is already configured.",
+      "dcr_failed": "Coder rejected the OAuth2 client registration. Try a session token instead.",
+      "oauth2_failed": "OAuth2 sign-in did not complete. Try again or use a session token.",
+      "missing_configuration": "Coder OAuth2 client is not configured.",
+      "authorize_url_timeout": "Timeout while generating the authorize URL.",
+      "no_url_available": "Home Assistant has no HTTPS URL Coder can redirect back to.",
+      "oauth_error": "Received invalid token data.",
+      "oauth_failed": "OAuth2 sign-in did not complete.",
+      "oauth_timeout": "Timeout while resolving the OAuth2 token.",
+      "oauth_unauthorized": "OAuth2 authorization failed.",
+      "user_rejected_authorize": "Authorization was cancelled."
+    },
+    "create_entry": {
+      "default": "Successfully connected to Coder."
     }
   },
   "entity": {

@@ -6,6 +6,7 @@ standalone PyPI package (`coder-sdk-py`) before submitting upstream.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urljoin
 
@@ -13,23 +14,50 @@ import aiohttp
 
 
 class CoderAuthError(Exception):
-    """Raised when the Coder API rejects the session token."""
+    """Raised when the Coder API rejects the current credential."""
 
 
 class CoderApiError(Exception):
     """Raised for non-auth API errors."""
 
 
-class CoderClient:
-    """Thin async wrapper around the Coder REST API."""
+TokenRefresher = Callable[[], Awaitable[str]]
 
-    def __init__(self, session: aiohttp.ClientSession, url: str, token: str) -> None:
+
+class CoderClient:
+    """Thin async wrapper around the Coder REST API.
+
+    Supports two auth modes:
+      - Session token (Coder-Session-Token header) — long-lived user token.
+      - OAuth2 bearer token — pass `bearer_token` plus an optional
+        `refresh` coroutine that returns a fresh access token; on 401 the
+        client calls `refresh()` once and retries the request.
+    """
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        *,
+        token: str | None = None,
+        bearer_token: str | None = None,
+        refresh: TokenRefresher | None = None,
+    ) -> None:
+        if (token is None) == (bearer_token is None):
+            raise ValueError("Provide exactly one of token or bearer_token")
         self._session = session
         self._base = url.rstrip("/") + "/"
-        self._headers = {
-            "Coder-Session-Token": token,
-            "Accept": "application/json",
-        }
+        self._token = token
+        self._bearer = bearer_token
+        self._refresh = refresh
+
+    def _headers(self) -> dict[str, str]:
+        headers = {"Accept": "application/json"}
+        if self._token is not None:
+            headers["Coder-Session-Token"] = self._token
+        else:
+            headers["Authorization"] = f"Bearer {self._bearer}"
+        return headers
 
     async def _request(
         self,
@@ -38,13 +66,19 @@ class CoderClient:
         *,
         json: Any = None,
         params: dict[str, Any] | None = None,
+        _retry: bool = True,
     ) -> Any:
         url = urljoin(self._base, path.lstrip("/"))
         async with self._session.request(
-            method, url, headers=self._headers, json=json, params=params
+            method, url, headers=self._headers(), json=json, params=params
         ) as resp:
             if resp.status == 401:
-                raise CoderAuthError("Invalid Coder session token")
+                if _retry and self._bearer is not None and self._refresh is not None:
+                    self._bearer = await self._refresh()
+                    return await self._request(
+                        method, path, json=json, params=params, _retry=False
+                    )
+                raise CoderAuthError("Coder rejected the current credential")
             if resp.status >= 400:
                 body = await resp.text()
                 raise CoderApiError(f"{method} {path} -> {resp.status}: {body}")
