@@ -3,13 +3,11 @@
 
 alias: "Coder — DevEx audit (notify when done)"
 description: >
-  When the audit chat reaches status=completed, push the link.
+  When the audit chat finishes its turn, push the link.
 mode: single
 triggers:
   - trigger: event
-    event_type: coder_chat_status_changed
-    event_data:
-      to: completed
+    event_type: coder_chat_turn_finished
 conditions:
   - condition: template
     value_template: >

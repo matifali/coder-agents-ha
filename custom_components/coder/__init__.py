@@ -24,10 +24,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: CoderConfigEntry) -> boo
         token=entry.data[CONF_TOKEN],
     )
 
-    coordinator = CoderCoordinator(hass, client, base_url=entry.data[CONF_URL])
+    coordinator = CoderCoordinator(
+        hass, entry, client, base_url=entry.data[CONF_URL]
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
+    entry.async_create_background_task(
+        hass, coordinator.async_watch(), f"{DOMAIN} chat watch"
+    )
 
     await hass.config_entries.async_forward_entry_setups(
         entry, [Platform(p) for p in PLATFORMS]
