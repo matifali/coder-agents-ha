@@ -23,6 +23,20 @@ create_chat:
       selector:
         text:
           multiline: true
+    title:
+      name: Title
+      description: >-
+        Fixed chat title (1-200 characters). Skips Coder's automatic title
+        generation.
+      selector:
+        text:
+    labels:
+      name: Labels
+      description: >-
+        Key/value labels to tag the chat with, e.g. {"source": "home-assistant"}.
+        Labels can be used to filter chats in Coder.
+      selector:
+        object:
 
 send_chat_message:
   name: Send chat message

@@ -20,9 +20,11 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .const import (
     ATTR_CHAT_ID,
+    ATTR_LABELS,
     ATTR_MESSAGE,
     ATTR_PROMPT,
     ATTR_SYSTEM_PROMPT,
+    ATTR_TITLE,
     ATTR_WORKSPACE_ID,
     DOMAIN,
     EVENT_CHAT_CREATED,
@@ -40,6 +42,8 @@ CREATE_CHAT_SCHEMA = vol.Schema(
         vol.Required(ATTR_PROMPT): str,
         vol.Optional(ATTR_WORKSPACE_ID): str,
         vol.Optional(ATTR_SYSTEM_PROMPT): str,
+        vol.Optional(ATTR_TITLE): vol.All(str, vol.Length(min=1, max=200)),
+        vol.Optional(ATTR_LABELS): {str: vol.Coerce(str)},
     }
 )
 
@@ -88,6 +92,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
             prompt=call.data[ATTR_PROMPT],
             workspace_id=call.data.get(ATTR_WORKSPACE_ID),
             system_prompt=call.data.get(ATTR_SYSTEM_PROMPT),
+            title=call.data.get(ATTR_TITLE),
+            labels=call.data.get(ATTR_LABELS),
         )
         chat_id = chat.get("id")
         chat_url = coordinator.chat_url(chat_id)

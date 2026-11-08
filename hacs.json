@@ -2,5 +2,5 @@
   "name": "Coder",
   "render_readme": true,
   "homeassistant": "2024.10.0",
-  "iot_class": "Cloud Polling"
+  "iot_class": "Cloud Push"
 }

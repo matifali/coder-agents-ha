@@ -1,11 +1,14 @@
 """Async REST client for the Coder API.
 
+Targets the stable /api/v2/chats routes (Coder v2.38+).
+
 Co-located here for v0.1; the long-term plan is to split this into a
 standalone PyPI package (`coder-sdk-py`) before submitting upstream.
 """
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from urllib.parse import urljoin
 
@@ -56,11 +59,11 @@ class CoderClient:
         return await self._request("GET", "/api/v2/users/me")
 
     async def list_chats(self) -> list[dict[str, Any]]:
-        data = await self._request("GET", "/api/experimental/chats")
+        data = await self._request("GET", "/api/v2/chats")
         return data if isinstance(data, list) else []
 
     async def get_chat(self, chat_id: str) -> dict[str, Any]:
-        return await self._request("GET", f"/api/experimental/chats/{chat_id}")
+        return await self._request("GET", f"/api/v2/chats/{chat_id}")
 
     async def create_chat(
         self,
@@ -69,6 +72,8 @@ class CoderClient:
         prompt: str,
         workspace_id: str | None = None,
         system_prompt: str | None = None,
+        title: str | None = None,
+        labels: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {
             "organization_id": organization_id,
@@ -78,12 +83,16 @@ class CoderClient:
             body["workspace_id"] = workspace_id
         if system_prompt:
             body["system_prompt"] = system_prompt
-        return await self._request("POST", "/api/experimental/chats", json=body)
+        if title:
+            body["title"] = title
+        if labels:
+            body["labels"] = labels
+        return await self._request("POST", "/api/v2/chats", json=body)
 
     async def post_chat_message(self, chat_id: str, message: str) -> dict[str, Any]:
         return await self._request(
             "POST",
-            f"/api/experimental/chats/{chat_id}/messages",
+            f"/api/v2/chats/{chat_id}/messages",
             json={"content": [{"type": "text", "text": message}]},
         )
 
@@ -100,10 +109,38 @@ class CoderClient:
         if title is not None:
             body["title"] = title
         await self._request(
-            "PATCH", f"/api/experimental/chats/{chat_id}", json=body
+            "PATCH", f"/api/v2/chats/{chat_id}", json=body
         )
 
     async def interrupt_chat(self, chat_id: str) -> None:
         await self._request(
-            "POST", f"/api/experimental/chats/{chat_id}/interrupt"
+            "POST", f"/api/v2/chats/{chat_id}/interrupt"
         )
+
+    async def watch_chats(
+        self, *, on_open: Callable[[], Awaitable[None]] | None = None
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Yield ChatWatchEvents pushed by the server until the socket closes.
+
+        Each event is ``{"kind": ..., "chat": {...}}``. The server sends
+        nothing on connect, so ``on_open`` runs once the socket is up to let
+        the caller list chats for a baseline; events that arrive meanwhile
+        are buffered and yielded afterwards.
+        """
+        url = urljoin(self._base, "api/v2/chats/watch")
+        try:
+            ws = await self._session.ws_connect(
+                url, headers=self._headers, heartbeat=30, max_msg_size=4 << 20
+            )
+        except aiohttp.WSServerHandshakeError as err:
+            if err.status == 401:
+                raise CoderAuthError("Invalid Coder session token") from err
+            raise CoderApiError(f"GET /api/v2/chats/watch -> {err.status}") from err
+        async with ws:
+            if on_open is not None:
+                await on_open()
+            async for msg in ws:
+                if msg.type is aiohttp.WSMsgType.TEXT:
+                    yield msg.json()
+                elif msg.type is aiohttp.WSMsgType.ERROR:
+                    raise CoderApiError(f"Chat watch failed: {ws.exception()}")

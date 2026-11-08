@@ -11,17 +11,19 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import CoderConfigEntry
+from .const import DOMAIN
 from .entity import CoderDeploymentEntity
 
+# Mirrors codersdk.ChatStatus. A finished turn returns to "waiting".
 CHAT_STATUSES = [
     "waiting",
-    "pending",
     "running",
+    "interrupting",
     "paused",
-    "completed",
     "error",
     "requires_action",
 ]
@@ -33,11 +35,17 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
+    # v0.2 had a "Chats requiring action" sensor; Unread chats replaced it.
+    registry = er.async_get(hass)
+    if old_id := registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_requires_action_chats"
+    ):
+        registry.async_remove(old_id)
     async_add_entities(
         [
             TotalChatsSensor(coordinator, entry),
             RunningChatsSensor(coordinator, entry),
-            RequiresActionChatsSensor(coordinator, entry),
+            UnreadChatsSensor(coordinator, entry),
             LastChatSensor(coordinator, entry),
         ]
     )
@@ -79,21 +87,23 @@ class RunningChatsSensor(CoderDeploymentEntity, SensorEntity):
         )
 
 
-class RequiresActionChatsSensor(CoderDeploymentEntity, SensorEntity):
-    _attr_translation_key = "requires_action_chats"
-    _attr_icon = "mdi:alert-circle-outline"
+class UnreadChatsSensor(CoderDeploymentEntity, SensorEntity):
+    """Chats with agent replies you haven't opened yet."""
+
+    _attr_translation_key = "unread_chats"
+    _attr_icon = "mdi:chat-alert-outline"
 
     def __init__(self, coordinator, entry) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = f"{entry.entry_id}_requires_action_chats"
-        self._attr_name = "Chats requiring action"
+        self._attr_unique_id = f"{entry.entry_id}_unread_chats"
+        self._attr_name = "Unread chats"
 
     @property
     def native_value(self) -> int:
         return sum(
             1
             for c in _non_archived(self.coordinator.data.chats)
-            if c.get("status") == "requires_action"
+            if c.get("has_unread")
         )
 
 
@@ -133,4 +143,5 @@ class LastChatSensor(CoderDeploymentEntity, SensorEntity):
             "agent_id": chat.get("agent_id"),
             "updated_at": chat.get("updated_at"),
             "has_unread": chat.get("has_unread"),
+            "last_turn_summary": chat.get("last_turn_summary"),
         }
